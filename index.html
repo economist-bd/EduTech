@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+<title>EduTech — সৃষ্টির বিজ্ঞান</title>
+<meta name="description" content="মহান আল্লাহ তায়ালার সৃষ্টির অপার মহিমা ও বিজ্ঞানসম্মত আলোচনা নিয়ে শর্ট ভিডিও — দারুন এক শিক্ষামূলক অভিজ্ঞতা।" />
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#0f0f1a" />
+<link rel="icon" href="icons/icon-192.png" />
+<link rel="apple-touch-icon" href="icons/icon-192.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="mobile-web-app-capable" content="yes" />
+
+<!-- Open Graph -->
+<meta property="og:type" content="website" />
+<meta property="og:title" content="EduTech — সৃষ্টির বিজ্ঞান" />
+<meta property="og:description" content="মহান আল্লাহ তায়ালার সৃষ্টির অপার মহিমা ও বিজ্ঞানসম্মত আলোচনা নিয়ে শর্ট ভিডিও।" />
+<meta property="og:image" content="icons/icon-512.png" />
+<meta property="og:url" content="https://economist-bd.github.io/EduTech/" />
+<meta property="og:site_name" content="EduTech" />
+<meta property="og:locale" content="bn_BD" />
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="EduTech — সৃষ্টির বিজ্ঞান" />
+<meta name="twitter:description" content="মহান আল্লাহ তায়ালার সৃষ্টির অপার মহিমা ও বিজ্ঞানসম্মত আলোচনা।" />
+<meta name="twitter:image" content="icons/icon-512.png" />
+
+<style>
+  :root {
+    --bg: #0f0f1a;
+    --accent: #ff3b5c;
+    --accent2: #7c4dff;
+    --text: #ffffff;
+    --muted: rgba(255,255,255,0.72);
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Noto Sans Bengali", "SolaimanLipi", system-ui, -apple-system, sans-serif;
+    overflow: hidden;
+    height: 100%;
+    width: 100%;
+  }
+
+  #app {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    background: #000;
+    perspective: 1200px;
+  }
+
+  #feed {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #000;
+    transform-style: preserve-3d;
+    will-change: transform, opacity;
+    transition: transform 0.45s cubic-bezier(.22,.9,.32,1), opacity 0.45s ease;
+  }
+
+  .slide video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    background: #000;
+  }
+
+  /* position states for 3D vertical carousel */
+  .slide.current   { transform: translateY(0) translateZ(0) rotateX(0deg) scale(1); opacity: 1; z-index: 3; }
+  .slide.next      { transform: translateY(100%) translateZ(-260px) rotateX(-18deg) scale(0.92); opacity: 0.4; z-index: 2; }
+  .slide.prev      { transform: translateY(-100%) translateZ(-260px) rotateX(18deg) scale(0.92); opacity: 0.4; z-index: 2; }
+  .slide.hidden    { transform: translateY(0) translateZ(-500px) scale(0.7); opacity: 0; z-index: 1; }
+
+  .slide.dragging { transition: none; }
+
+  /* overlay gradient for readability */
+  .overlay-shade {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 45%;
+    background: linear-gradient(to top, rgba(0,0,0,0.75), rgba(0,0,0,0));
+    pointer-events: none;
+    z-index: 4;
+  }
+
+  .top-bar {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    padding: env(safe-area-inset-top, 14px) 16px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 6;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.55), rgba(0,0,0,0));
+  }
+
+  .brand {
+    font-weight: 800;
+    font-size: 17px;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .brand .dot { color: var(--accent); }
+
+  .icon-btn {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.12);
+    border: none;
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    backdrop-filter: blur(6px);
+  }
+
+  .meta-panel {
+    position: absolute;
+    left: 16px;
+    bottom: env(safe-area-inset-bottom, 18px);
+    right: 88px;
+    z-index: 6;
+    pointer-events: none;
+  }
+
+  .meta-panel .caption {
+    font-size: 15.5px;
+    line-height: 1.5;
+    font-weight: 600;
+    text-shadow: 0 1px 6px rgba(0,0,0,0.6);
+    margin-bottom: 8px;
+  }
+
+  .meta-panel .tags {
+    font-size: 13px;
+    color: var(--muted);
+    text-shadow: 0 1px 6px rgba(0,0,0,0.6);
+  }
+
+  .side-actions {
+    position: absolute;
+    right: 12px;
+    bottom: env(safe-area-inset-bottom, 18px);
+    z-index: 6;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 22px;
+  }
+
+  .action-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+  }
+
+  .action-circle {
+    width: 50px; height: 50px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.14);
+    backdrop-filter: blur(8px);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    transition: transform 0.15s ease;
+  }
+
+  .action-btn:active .action-circle { transform: scale(0.85); }
+
+  .action-btn.liked .action-circle {
+    background: rgba(255,59,92,0.25);
+    color: var(--accent);
+  }
+
+  .action-count {
+    font-size: 12.5px;
+    font-weight: 700;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+  }
+
+  /* floating heart burst on double-tap / like */
+  .heart-burst {
+    position: absolute;
+    font-size: 90px;
+    pointer-events: none;
+    z-index: 10;
+    animation: heartPop 0.9s ease forwards;
+    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.4));
+  }
+  @keyframes heartPop {
+    0%   { transform: scale(0) rotate(-15deg); opacity: 0; }
+    35%  { transform: scale(1.15) rotate(5deg); opacity: 1; }
+    55%  { transform: scale(0.95) rotate(0deg); opacity: 1; }
+    100% { transform: scale(0.9) translateY(-40px) rotate(0deg); opacity: 0; }
+  }
+
+  .floating-heart {
+    position: absolute;
+    font-size: 22px;
+    z-index: 7;
+    pointer-events: none;
+    animation: floatUp 1.4s ease-out forwards;
+  }
+  @keyframes floatUp {
+    0%   { transform: translateY(0) scale(0.6) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(-220px) scale(1.2) rotate(20deg); opacity: 0; }
+  }
+
+  .progress-dots {
+    position: absolute;
+    top: env(safe-area-inset-top, 50px);
+    right: 10px;
+    z-index: 6;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    align-items: center;
+    margin-top: 36px;
+  }
+  .progress-dots .dot-i {
+    width: 4px; height: 14px;
+    border-radius: 3px;
+    background: rgba(255,255,255,0.3);
+  }
+  .progress-dots .dot-i.active {
+    background: var(--accent);
+    height: 22px;
+  }
+
+  .swipe-hint {
+    position: absolute;
+    inset: 0;
+    z-index: 8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 10px;
+    background: rgba(0,0,0,0.45);
+    color: white;
+    text-align: center;
+    transition: opacity 0.4s ease;
+  }
+  .swipe-hint .arrow { font-size: 30px; animation: bounceUpDown 1.4s infinite; }
+  @keyframes bounceUpDown {
+    0%,100% { transform: translateY(0); }
+    50% { transform: translateY(10px); }
+  }
+
+  /* Install modal */
+  .install-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.65);
+    backdrop-filter: blur(3px);
+    z-index: 50;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+  .install-overlay.show { opacity: 1; pointer-events: auto; }
+
+  .install-card {
+    width: 100%;
+    max-width: 480px;
+    background: linear-gradient(160deg, #1b1b2c, #0f0f1a);
+    border-radius: 22px 22px 0 0;
+    padding: 26px 22px calc(26px + env(safe-area-inset-bottom, 0px));
+    text-align: center;
+    transform: translateY(100%);
+    transition: transform 0.35s cubic-bezier(.22,.9,.32,1);
+    box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
+  }
+  .install-overlay.show .install-card { transform: translateY(0); }
+
+  .install-card .app-icon {
+    width: 70px; height: 70px;
+    border-radius: 18px;
+    margin: 0 auto 14px;
+    display: block;
+    box-shadow: 0 6px 20px rgba(124,77,255,0.4);
+  }
+  .install-card h3 { margin: 0 0 6px; font-size: 19px; }
+  .install-card p { margin: 0 0 20px; color: var(--muted); font-size: 14px; line-height: 1.5; }
+
+  .install-btn {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 14px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    color: white;
+    font-weight: 700;
+    font-size: 15.5px;
+    margin-bottom: 10px;
+  }
+  .later-btn {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 14px;
+    background: transparent;
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  .loading-screen {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+  }
+  .loading-screen img { width: 64px; height: 64px; border-radius: 16px; animation: pulse 1.4s infinite; }
+  @keyframes pulse { 0%,100%{transform:scale(1);} 50%{transform:scale(1.08);} }
+  .loading-screen .spinner {
+    width: 30px; height: 30px;
+    border: 3px solid rgba(255,255,255,0.15);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .toast {
+    position: fixed;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(20,20,30,0.92);
+    color: white;
+    padding: 10px 18px;
+    border-radius: 30px;
+    font-size: 13.5px;
+    z-index: 60;
+    opacity: 0;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(-6px); }
+
+  /* Desktop / PC adjustments */
+  @media (min-width: 700px) {
+    body { background: #000; }
+    #app {
+      max-width: 430px;
+      max-height: 92vh;
+      top: 4vh; left: 50%;
+      transform: translateX(-50%);
+      border-radius: 26px;
+      overflow: hidden;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="loading-screen" id="loadingScreen">
+  <img src="icons/icon-192.png" alt="EduTech" />
+  <div class="spinner"></div>
+</div>
+
+<div id="app">
+  <div id="feed"></div>
+
+  <div class="top-bar">
+    <div class="brand"><span>EduTech</span><span class="dot">●</span><span style="font-size:13px;font-weight:500;opacity:.8;">সৃষ্টির বিজ্ঞান</span></div>
+    <button class="icon-btn" id="fullscreenBtn" aria-label="Fullscreen">⛶</button>
+  </div>
+
+  <div class="progress-dots" id="progressDots"></div>
+
+  <div class="swipe-hint" id="swipeHint">
+    <div class="arrow">↕️</div>
+    <div>স্ক্রল করে ভিডিও দেখুন</div>
+  </div>
+</div>
+
+<div class="install-overlay" id="installOverlay">
+  <div class="install-card">
+    <img src="icons/icon-192.png" class="app-icon" alt="EduTech" />
+    <h3>EduTech অ্যাপ ইন্সটল করুন</h3>
+    <p>হোম স্ক্রিনে যুক্ত করে অফলাইনেও দেখুন আল্লাহর সৃষ্টির অপার বিজ্ঞান — দ্রুত, বিজ্ঞাপনমুক্ত অভিজ্ঞতা।</p>
+    <button class="install-btn" id="installNowBtn">📲 ইন্সটল করুন</button>
+    <button class="later-btn" id="installLaterBtn">পরে করব</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  const feedEl = document.getElementById("feed");
+  const progressDots = document.getElementById("progressDots");
+  const swipeHint = document.getElementById("swipeHint");
+  const loadingScreen = document.getElementById("loadingScreen");
+  const toastEl = document.getElementById("toast");
+
+  let videos = [];
+  let current = 0;
+  let likedMap = {};
+  let viewCountMap = {};
+  let slideEls = [];
+
+  const STORAGE_KEY = "edutech_state_v1";
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        likedMap = parsed.likedMap || {};
+        viewCountMap = parsed.viewCountMap || {};
+      }
+    } catch (e) { /* ignore */ }
+  }
+
+  function saveState() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ likedMap, viewCountMap }));
+    } catch (e) { /* ignore */ }
+  }
+
+  function showToast(msg, duration = 1800) {
+    toastEl.textContent = msg;
+    toastEl.classList.add("show");
+    clearTimeout(toastEl._t);
+    toastEl._t = setTimeout(() => toastEl.classList.remove("show"), duration);
+  }
+
+  function formatCount(n) {
+    if (n >= 1000000) return (n / 1000000).toFixed(1).replace(/\.0$/, "") + "M";
+    if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, "") + "K";
+    return String(n);
+  }
+
+  function seededRandom(seed) {
+    let h = 0;
+    for (let i = 0; i < seed.length; i++) {
+      h = Math.imul(31, h) + seed.charCodeAt(i) | 0;
+    }
+    return function () {
+      h = Math.imul(h ^ (h >>> 15), h | 1);
+      h ^= h + Math.imul(h ^ (h >>> 7), h | 61);
+      return ((h ^ (h >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  function ensureBaseCounts(video) {
+    if (!viewCountMap[video.id]) {
+      const rng = seededRandom(video.id);
+      const views = 200000 + Math.floor(rng() * 800000); // 200K - 1M
+      const likes = Math.floor(views * (0.04 + rng() * 0.05)); // ~4-9% of views
+      viewCountMap[video.id] = { views, likes };
+    }
+    return viewCountMap[video.id];
+  }
+
+  async function fetchVideos() {
+    try {
+      const res = await fetch("videos.json", { cache: "no-store" });
+      const data = await res.json();
+      return data;
+    } catch (e) {
+      console.error("videos.json লোড করতে সমস্যা হয়েছে", e);
+      return [];
+    }
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function buildSlide(video, index) {
+    const counts = ensureBaseCounts(video);
+    const isLiked = !!likedMap[video.id];
+
+    const slide = document.createElement("div");
+    slide.className = "slide hidden";
+    slide.dataset.index = index;
+
+    slide.innerHTML = `
+      <video src="${video.src}" loop playsinline preload="metadata" muted></video>
+      <div class="overlay-shade"></div>
+      <div class="meta-panel">
+        <div class="caption">${escapeHtml(video.caption || "")}</div>
+        <div class="tags">${(video.tags || []).join("  ")}</div>
+      </div>
+      <div class="side-actions">
+        <button class="action-btn like-btn ${isLiked ? "liked" : ""}" aria-label="Like">
+          <div class="action-circle">${isLiked ? "❤️" : "🤍"}</div>
+          <div class="action-count like-count">${formatCount(counts.likes)}</div>
+        </button>
+        <button class="action-btn share-btn" aria-label="Share">
+          <div class="action-circle">📤</div>
+          <div class="action-count">শেয়ার</div>
+        </button>
+        <button class="action-btn mute-btn" aria-label="Mute">
+          <div class="action-circle mute-icon">🔇</div>
+          <div class="action-count">সাউন্ড</div>
+        </button>
+        <div class="action-btn" aria-hidden="true">
+          <div class="action-circle" style="font-size:18px;">👁️</div>
+          <div class="action-count view-count">${formatCount(counts.views)}</div>
+        </div>
+      </div>
+    `;
+
+    return slide;
+  }
+
+  function renderDots() {
+    progressDots.innerHTML = "";
+    const maxDots = Math.min(videos.length, 8);
+    for (let i = 0; i < maxDots; i++) {
+      const d = document.createElement("div");
+      d.className = "dot-i" + (i === (current % maxDots) ? " active" : "");
+      progressDots.appendChild(d);
+    }
+  }
+
+  function getVideoEl(slide) {
+    return slide.querySelector("video");
+  }
+
+  function playCurrentVideo() {
+    slideEls.forEach((s, i) => {
+      const v = getVideoEl(s);
+      if (!v) return;
+      if (i === current) {
+        v.currentTime = 0;
+        v.play().catch(() => {});
+      } else {
+        v.pause();
+      }
+    });
+  }
+
+  function positionSlides() {
+    slideEls.forEach((s, i) => {
+      s.classList.remove("current", "next", "prev", "hidden");
+      if (i === current) s.classList.add("current");
+      else if (i === current + 1) s.classList.add("next");
+      else if (i === current - 1) s.classList.add("prev");
+      else s.classList.add("hidden");
+    });
+    renderDots();
+  }
+
+  function goTo(index) {
+    if (index < 0 || index >= videos.length) return;
+    current = index;
+    positionSlides();
+    playCurrentVideo();
+    if (swipeHint) {
+      swipeHint.style.opacity = "0";
+      setTimeout(() => { swipeHint.style.display = "none"; }, 400);
+    }
+  }
+
+  function nextSlide() { goTo(current + 1); }
+  function prevSlide() { goTo(current - 1); }
+
+  function spawnHeartBurst(slide, x, y) {
+    const burst = document.createElement("div");
+    burst.className = "heart-burst";
+    burst.textContent = "❤️";
+    burst.style.left = (x - 45) + "px";
+    burst.style.top = (y - 45) + "px";
+    slide.appendChild(burst);
+    setTimeout(() => burst.remove(), 950);
+  }
+
+  function spawnFloatingHeart(slide) {
+    const heart = document.createElement("div");
+    heart.className = "floating-heart";
+    heart.textContent = "❤️";
+    const rightOffset = 30 + Math.random() * 20;
+    const bottomOffset = 140 + Math.random() * 40;
+    heart.style.right = rightOffset + "px";
+    heart.style.bottom = bottomOffset + "px";
+    slide.appendChild(heart);
+    setTimeout(() => heart.remove(), 1450);
+  }
+
+  function toggleLike(video, slide) {
+    const counts = ensureBaseCounts(video);
+    const wasLiked = !!likedMap[video.id];
+    likedMap[video.id] = !wasLiked;
+
+    const likeBtn = slide.querySelector(".like-btn");
+    const likeCircle = slide.querySelector(".like-btn .action-circle");
+    const likeCountEl = slide.querySelector(".like-count");
+
+    if (!wasLiked) {
+      counts.likes += 1;
+      likeBtn.classList.add("liked");
+      likeCircle.textContent = "❤️";
+      spawnFloatingHeart(slide);
+    } else {
+      counts.likes = Math.max(0, counts.likes - 1);
+      likeBtn.classList.remove("liked");
+      likeCircle.textContent = "🤍";
+    }
+    likeCountEl.textContent = formatCount(counts.likes);
+    saveState();
+  }
+
+  async function shareVideo(video) {
+    const shareData = {
+      title: "EduTech — সৃষ্টির বিজ্ঞান",
+      text: video.caption || "মহান আল্লাহর সৃষ্টির অপার বিজ্ঞান দেখুন EduTech অ্যাপে।",
+      url: window.location.href
+    };
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (e) { /* user cancelled */ }
+    } else {
+      try {
+        await navigator.clipboard.writeText(shareData.url);
+        showToast("লিংক কপি হয়েছে ✅");
+      } catch (e) {
+        showToast("শেয়ার সমর্থিত নয় এই ব্রাউজারে");
+      }
+    }
+  }
+
+  function toggleFullscreen() {
+    const app = document.getElementById("app");
+    if (!document.fullscreenElement) {
+      (app.requestFullscreen || app.webkitRequestFullscreen || function(){}).call(app);
+    } else {
+      (document.exitFullscreen || document.webkitExitFullscreen || function(){}).call(document);
+    }
+  }
+
+  function attachSlideEvents(slide, video) {
+    const vEl = getVideoEl(slide);
+    let lastTap = 0;
+
+    slide.addEventListener("click", (e) => {
+      if (e.target.closest(".action-btn")) return;
+      const now = Date.now();
+      if (now - lastTap < 320) {
+        const rect = slide.getBoundingClientRect();
+        spawnHeartBurst(slide, e.clientX - rect.left, e.clientY - rect.top);
+        if (!likedMap[video.id]) toggleLike(video, slide);
+      } else {
+        setTimeout(() => {
+          if (Date.now() - lastTap >= 300) {
+            if (vEl.paused) vEl.play().catch(() => {}); else vEl.pause();
+          }
+        }, 300);
+      }
+      lastTap = now;
+    });
+
+    slide.querySelector(".like-btn").addEventListener("click", (e) => {
+      e.stopPropagation();
+      toggleLike(video, slide);
+    });
+
+    slide.querySelector(".share-btn").addEventListener("click", (e) => {
+      e.stopPropagation();
+      shareVideo(video);
+    });
+
+    const muteBtn = slide.querySelector(".mute-btn");
+    const muteIcon = slide.querySelector(".mute-icon");
+    muteBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      vEl.muted = !vEl.muted;
+      muteIcon.textContent = vEl.muted ? "🔇" : "🔊";
+    });
+  }
+
+  function setupDragNavigation() {
+    const appEl = document.getElementById("app");
+    let startY = 0, startX = 0, deltaY = 0, deltaX = 0, dragging = false;
+
+    function onStart(y, x) {
+      dragging = true;
+      startY = y; startX = x;
+      deltaY = 0; deltaX = 0;
+      slideEls.forEach(s => s.classList.add("dragging"));
+    }
+
+    function onMove(y, x) {
+      if (!dragging) return;
+      deltaY = y - startY;
+      deltaX = x - startX;
+      const cur = slideEls[current];
+      if (cur) cur.style.transform = `translateY(${deltaY}px) translateZ(0) scale(${1 - Math.min(Math.abs(deltaY)/2000,0.05)})`;
+    }
+
+    function onEnd() {
+      if (!dragging) return;
+      dragging = false;
+      slideEls.forEach(s => { s.classList.remove("dragging"); s.style.transform = ""; });
+
+      const threshold = 60;
+      if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > threshold) {
+        if (deltaY < 0) nextSlide(); else prevSlide();
+      } else if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > threshold) {
+        if (deltaX < 0) nextSlide(); else prevSlide();
+      }
+    }
+
+    appEl.addEventListener("touchstart", (e) => {
+      const t = e.touches[0];
+      onStart(t.clientY, t.clientX);
+    }, { passive: true });
+
+    appEl.addEventListener("touchmove", (e) => {
+      const t = e.touches[0];
+      onMove(t.clientY, t.clientX);
+    }, { passive: true });
+
+    appEl.addEventListener("touchend", onEnd);
+
+    appEl.addEventListener("mousedown", (e) => {
+      onStart(e.clientY, e.clientX);
+    });
+    window.addEventListener("mousemove", (e) => {
+      if (dragging) onMove(e.clientY, e.clientX);
+    });
+    window.addEventListener("mouseup", onEnd);
+
+    let wheelLock = false;
+    appEl.addEventListener("wheel", (e) => {
+      if (wheelLock) return;
+      wheelLock = true;
+      if (e.deltaY > 10) nextSlide();
+      else if (e.deltaY < -10) prevSlide();
+      setTimeout(() => { wheelLock = false; }, 500);
+    }, { passive: true });
+
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowDown" || e.key === "ArrowRight") nextSlide();
+      if (e.key === "ArrowUp" || e.key === "ArrowLeft") prevSlide();
+    });
+  }
+
+  function renderFeed() {
+    feedEl.innerHTML = "";
+    slideEls = videos.map((video, i) => {
+      const slide = buildSlide(video, i);
+      attachSlideEvents(slide, video);
+      feedEl.appendChild(slide);
+      return slide;
+    });
+    positionSlides();
+    playCurrentVideo();
+  }
+
+  // ---------- Install Prompt Logic ----------
+  let deferredInstallEvent = null;
+  const installOverlay = document.getElementById("installOverlay");
+  const installNowBtn = document.getElementById("installNowBtn");
+  const installLaterBtn = document.getElementById("installLaterBtn");
+  let installTimer = null;
+
+  function isAppInstalled() {
+    return window.matchMedia("(display-mode: standalone)").matches ||
+           window.navigator.standalone === true;
+  }
+
+  function showInstallOverlay() {
+    if (isAppInstalled()) return;
+    installOverlay.classList.add("show");
+  }
+  function hideInstallOverlay() {
+    installOverlay.classList.remove("show");
+  }
+
+  function startInstallReminderLoop() {
+    if (isAppInstalled()) return;
+    setTimeout(showInstallOverlay, 4000);
+    installTimer = setInterval(() => {
+      if (isAppInstalled()) {
+        clearInterval(installTimer);
+        return;
+      }
+      showInstallOverlay();
+    }, 30000);
+  }
+
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+    deferredInstallEvent = e;
+  });
+
+  installNowBtn.addEventListener("click", async () => {
+    if (deferredInstallEvent) {
+      deferredInstallEvent.prompt();
+      const choice = await deferredInstallEvent.userChoice;
+      if (choice.outcome === "accepted") {
+        showToast("ইন্সটল হচ্ছে... ধন্যবাদ! 🎉");
+        clearInterval(installTimer);
+      }
+      deferredInstallEvent = null;
+    } else {
+      showToast("ব্রাউজার মেনু থেকে 'হোম স্ক্রিনে যুক্ত করুন' নির্বাচন করুন");
+    }
+    hideInstallOverlay();
+  });
+
+  installLaterBtn.addEventListener("click", hideInstallOverlay);
+
+  window.addEventListener("appinstalled", () => {
+    clearInterval(installTimer);
+    hideInstallOverlay();
+    showToast("EduTech সফলভাবে ইন্সটল হয়েছে! ✅");
+  });
+
+  // ---------- Fullscreen ----------
+  document.getElementById("fullscreenBtn").addEventListener("click", toggleFullscreen);
+
+  // ---------- Service Worker ----------
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("sw.js").catch((err) => {
+        console.warn("Service worker registration failed:", err);
+      });
+    });
+  }
+
+  // ---------- Init ----------
+  async function init() {
+    loadState();
+    videos = await fetchVideos();
+
+    if (!videos.length) {
+      feedEl.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#aaa;text-align:center;padding:30px;">
+        কোনো ভিডিও পাওয়া যায়নি।<br/>videos.json ফাইলে ভিডিও যুক্ত করুন।
+      </div>`;
+    } else {
+      renderFeed();
+      setupDragNavigation();
+      startInstallReminderLoop();
+      setTimeout(() => {
+        if (swipeHint) swipeHint.style.opacity = "1";
+      }, 100);
+    }
+
+    loadingScreen.style.opacity = "0";
+    setTimeout(() => { loadingScreen.style.display = "none"; }, 350);
+  }
+
+  loadingScreen.style.transition = "opacity 0.35s ease";
+  init();
+})();
+</script>
+</body>
+</html>

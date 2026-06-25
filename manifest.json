@@ -1,0 +1,36 @@
+{
+  "name": "EduTech — সৃষ্টির বিজ্ঞান",
+  "short_name": "EduTech",
+  "description": "মহান আল্লাহ তায়ালার সৃষ্টির অপার মহিমা ও বিজ্ঞানসম্মত আলোচনা নিয়ে শর্ট ভিডিও প্ল্যাটফর্ম।",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f0f1a",
+  "theme_color": "#0f0f1a",
+  "lang": "bn",
+  "dir": "ltr",
+  "categories": ["education", "entertainment", "lifestyle"],
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ]
+}
