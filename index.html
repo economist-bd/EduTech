@@ -494,15 +494,115 @@
     return viewCountMap[video.id];
   }
 
-  async function fetchVideos() {
+  // ---------- Dynamic video list from GitHub repo ----------
+  const GITHUB_USER = "economist-bd";
+  const GITHUB_REPO = "EduTech";
+  const GITHUB_BRANCH = "main";
+  const GITHUB_API_URL = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/`;
+  const VIDEO_LIST_CACHE_KEY = "edutech_video_list_cache_v1";
+  const VIDEO_LIST_CACHE_TTL = 5 * 60 * 1000; // 5 minutes — keeps us under GitHub's rate limit
+  const VIDEO_EXTENSIONS = [".mp4", ".mov", ".webm", ".m4v"];
+
+  function isVideoFile(name) {
+    const lower = name.toLowerCase();
+    return VIDEO_EXTENSIONS.some((ext) => lower.endsWith(ext));
+  }
+
+  function makeIdFromName(name) {
+    // stable short id derived from filename, used for view/like counters
+    let h = 0;
+    for (let i = 0; i < name.length; i++) {
+      h = (Math.imul(31, h) + name.charCodeAt(i)) | 0;
+    }
+    return "v" + Math.abs(h);
+  }
+
+  function filenameToCaption(filename) {
+    let name = filename.replace(/\.(mp4|mov|webm|m4v)$/i, "");
+    // strip resolution / quality tags like (720P_HD), (720P_1), 720_1 etc.
+    name = name.replace(/\(?\s*720p[^)]*\)?/gi, "");
+    name = name.replace(/720_?\d*/gi, "");
+    // underscores in these filenames are typically stand-ins for ? (question marks)
+    name = name.replace(/_/g, "?");
+    name = name.replace(/\?{2,}/g, "?");
+    name = name.replace(/\(\s*\)/g, "");
+    name = name.replace(/[()]+\s*$/g, "");
+    name = name.replace(/\s+/g, " ").trim();
+    return name || "EduTech ভিডিও";
+  }
+
+  function buildVideoObject(item) {
+    const rawUrl = item.download_url || `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${GITHUB_BRANCH}/${encodeURIComponent(item.name)}`;
+    return {
+      id: makeIdFromName(item.name),
+      src: encodeURI(rawUrl),
+      caption: filenameToCaption(item.name),
+      tags: ["#সৃষ্টি", "#বিজ্ঞান", "#EduTech"]
+    };
+  }
+
+  function readVideoListCache() {
+    try {
+      const raw = localStorage.getItem(VIDEO_LIST_CACHE_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (Date.now() - parsed.timestamp > VIDEO_LIST_CACHE_TTL) return null;
+      return parsed.videos;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function writeVideoListCache(videoList) {
+    try {
+      localStorage.setItem(VIDEO_LIST_CACHE_KEY, JSON.stringify({ timestamp: Date.now(), videos: videoList }));
+    } catch (e) { /* ignore (e.g. storage full) */ }
+  }
+
+  async function fetchVideosFromGitHub() {
+    const res = await fetch(GITHUB_API_URL, {
+      headers: { Accept: "application/vnd.github+json" }
+    });
+    if (!res.ok) throw new Error("GitHub API error: " + res.status);
+    const items = await res.json();
+    if (!Array.isArray(items)) throw new Error("Unexpected GitHub API response");
+
+    return items
+      .filter((item) => item.type === "file" && isVideoFile(item.name))
+      .sort((a, b) => a.name.localeCompare(b.name, "bn"))
+      .map(buildVideoObject);
+  }
+
+  async function fetchVideosFromLocalJson() {
     try {
       const res = await fetch("videos.json", { cache: "no-store" });
-      const data = await res.json();
-      return data;
+      if (!res.ok) return [];
+      return await res.json();
     } catch (e) {
-      console.error("videos.json লোড করতে সমস্যা হয়েছে", e);
       return [];
     }
+  }
+
+  async function fetchVideos() {
+    // 1) Try short-lived cache first (avoids hammering GitHub's rate-limited API)
+    const cached = readVideoListCache();
+    if (cached && cached.length) return cached;
+
+    // 2) Try live GitHub repo listing — this is the primary source, so new
+    //    uploads to the repo show up automatically without editing any file.
+    try {
+      const liveVideos = await fetchVideosFromGitHub();
+      if (liveVideos.length) {
+        writeVideoListCache(liveVideos);
+        return liveVideos;
+      }
+    } catch (e) {
+      console.warn("GitHub থেকে ভিডিও লিস্ট আনতে সমস্যা হয়েছে:", e);
+    }
+
+    // 3) Fallback to local videos.json if GitHub API fails or rate-limits
+    const fallback = await fetchVideosFromLocalJson();
+    return fallback;
   }
 
   function escapeHtml(str) {
@@ -872,8 +972,10 @@
     videos = await fetchVideos();
 
     if (!videos.length) {
-      feedEl.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#aaa;text-align:center;padding:30px;">
-        কোনো ভিডিও পাওয়া যায়নি।<br/>videos.json ফাইলে ভিডিও যুক্ত করুন।
+      feedEl.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#aaa;text-align:center;padding:30px;line-height:1.6;">
+        কোনো ভিডিও পাওয়া যায়নি।<br/>
+        GitHub রিপোর মেইন ব্রাঞ্চে .mp4 ফাইল আপলোড করুন,<br/>
+        অ্যাপ নিজেই কয়েক মিনিটের মধ্যে তা দেখাবে।
       </div>`;
     } else {
       renderFeed();
